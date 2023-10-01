@@ -56,7 +56,7 @@ unsigned long debounceDelay = 2;
 
 #define i2clcd       0                         // Display Lcd
 #define i2cOled      1                         // Display Oled
-#define i2cESP32     2
+#define i2cESP32     2                         // ESP32
 
 
 
@@ -101,11 +101,11 @@ void disp_umid(); //mostrar a umidade relativa do ar
 
 ISR(TIMER2_OVF_vect)
 {
-    TCNT2=0;                //Reinicializa o registrador do Timer2
+    TCNT2=100;                //Reinicializa o registrador do Timer2
 
     counter++;              //incrementa counter
     
-    if(counter == 143 )     //counter igual a 400?
+    if(counter == 400 )     //counter igual a 400?
     {                       //sim...
     
        counter = 0x00;      //reinicia counter
@@ -133,13 +133,14 @@ void disp_temp()
    display.setTextColor(WHITE);
        display.setCursor(30,0);
   display.print("Temperatura");
-             display.display();
         display.setTextSize(2);
       display.setCursor(16,14);
    display.setTextColor(WHITE);
     display.print(temperatura);
            display.print(" *C");
              display.display();
+        Wire.endTransmission();                      // encerra a transmissao                     
+        I2CMux.closeChannel(1);             
  
 } //end disp_temp
 
@@ -152,13 +153,14 @@ void disp_umid()
    display.setTextColor(WHITE);
        display.setCursor(40,0);
       display.print("Umidade");
-             display.display();
         display.setTextSize(2);
    display.setTextColor(WHITE);
       display.setCursor(19,14);
         display.print(umidade);
            display.print(" %");
              display.display();
+        Wire.endTransmission();                      // encerra a transmissao                     
+        I2CMux.closeChannel(1);         
   
 } //end umid_temp
 
@@ -283,14 +285,15 @@ void disp_graph_init()
 void Supervisionamento()
 {
    
+  static unsigned long ultimaMudanca = 0;
+ 
+  if (millis() - ultimaMudanca >= 1000)
+  {
+    int estado = !digitalRead (ledpin_MEGA_ADK);
+    digitalWrite(ledpin_MEGA_ADK, estado);
+    ultimaMudanca = millis();
 
-  //Acende o LED durante 1 segundo
-  digitalWrite(ledpin_MEGA_ADK, HIGH);
-  delay(1000);
-
-  //Apaga o LED durante 1 segundo
-  digitalWrite(ledpin_MEGA_ADK, LOW);
-  delay(1000);
+  }
 
     
 }
@@ -375,8 +378,7 @@ void Comunicacao_Oled()
                                          else         disp_umid();
 
                                           
-                                           Wire.endTransmission();                      // encerra a transmissao                     
-                                           I2CMux.closeChannel(1);   
+  
                                          
 
 
